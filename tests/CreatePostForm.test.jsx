@@ -1,7 +1,9 @@
 // tests/CreatePostForm.test.jsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import CreatePostForm from '../app/components/CreatePostForm';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 
 // Mock the next/navigation module
 vi.mock('next/navigation', () => ({
@@ -11,33 +13,56 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock the api service
+const mockCreatePost = vi.fn();
 vi.mock('@/services/api', () => ({
-  createPost: vi.fn(),
+  createPost: () => mockCreatePost(),
 }));
 
+// Create a theme instance
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
+
+const renderWithTheme = (component) => {
+  return render(
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {component}
+    </ThemeProvider>
+  );
+};
+
 describe('CreatePostForm', () => {
+  beforeEach(() => {
+    mockCreatePost.mockClear();
+  });
+
   it('renders the form', () => {
-    render(<CreatePostForm />);
+    renderWithTheme(<CreatePostForm />);
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/content/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create post/i })).toBeInTheDocument();
   });
 
   it('shows error when submitting empty form', async () => {
-    render(<CreatePostForm />);
+    renderWithTheme(<CreatePostForm />);
     
-    fireEvent.click(screen.getByRole('button', { name: /create post/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /create post/i }));
+    });
     
-    expect(await screen.findByText('Title and Body are required')).toBeInTheDocument();
+    await waitFor(() => {
+      const alerts = screen.getAllByText('Title and Body are required');
+      expect(alerts.length).toBeGreaterThan(0);
+    });
   });
 
   it('submits form successfully', async () => {
-    const mockCreatePost = vi.fn().mockResolvedValue({ id: 1, title: 'Test', body: 'Test body' });
-    vi.mock('@/services/api', () => ({
-      createPost: mockCreatePost,
-    }));
+    mockCreatePost.mockResolvedValueOnce({ id: 1, title: 'Test', body: 'Test body' });
 
-    render(<CreatePostForm />);
+    renderWithTheme(<CreatePostForm />);
     
     fireEvent.change(screen.getByLabelText(/title/i), {
       target: { value: 'Test Title' },

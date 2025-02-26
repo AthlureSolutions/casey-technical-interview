@@ -20,6 +20,7 @@ export default function CreatePostForm() {
     e.preventDefault();
     if (!formData.title.trim() || !formData.body.trim()) {
       setError('Title and Body are required');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -52,14 +53,13 @@ export default function CreatePostForm() {
       </Typography>
       
       <Box component="form" onSubmit={handleSubmit}>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && <Alert severity="error" role="alert" sx={{ mb: 2 }}>{error}</Alert>}
         <TextField
           fullWidth
           label="Title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           margin="normal"
-          required
         />
         <TextField
           fullWidth
@@ -69,7 +69,6 @@ export default function CreatePostForm() {
           margin="normal"
           multiline
           rows={4}
-          required
         />
         <Button 
           type="submit"
@@ -89,6 +88,7 @@ export default function CreatePostForm() {
         <Alert 
           onClose={handleCloseSnackbar} 
           severity={error ? "error" : "success"} 
+          role="alert"
           sx={{ width: '100%' }}
         >
           {error ? error : (
